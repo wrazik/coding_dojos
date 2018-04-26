@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "../src/Solver.h"
+#include <iostream>
 
 /*TEST(SolverTests, DISABLED_EmptyValley)
 {
@@ -18,15 +19,61 @@ TEST(SolverTests, DISABLED_NotEmptyValley)
 	EXPECT_EQ(Solver::Solve({6, 6, 0, 5, 0, 0, 5}), 10);
 }*/
 
-TEST(SolverTests, FindPeeks) {
-	Solver solver({1, 0, 3, 5, 4, 0, 1, 2, 1, 3, 0, 1, 2, 0, 1});
-	EXPECT_EQ(std::vector<int>({0,3,7,9,12,14}), solver.FindPeaks());
+
+using TestData = std::vector<std::string>;
+
+auto parse_test_data(const TestData& data)
+{
+	TestData mountain(data.begin(), std::prev(data.end()));
+	std::vector<int> input(data[0].size(),0);
+	std::vector<int> expected;
+
+	for(const auto& row : mountain)
+	{
+		for(auto i = 0u; i < input.size(); ++i)
+		{
+			if('#' == row[i])
+			{
+				input[i]++;
+			}
+		}
+	}
+
+	for(auto i = 0u; i < input.size(); ++i)
+	{
+		if('P' == (*data.rbegin())[i])
+		{
+			expected.push_back(i);
+		}
+	}
+
+	return std::make_tuple(input, expected);
 }
 
-TEST(SolverTests, FindPeeksBeforeMountain) {
-	Solver solver({1, 0, 3, 5, 4, 0, 2, 2, 2, 3, 0, 1, 2, 0, 1});
-	EXPECT_EQ(std::vector<int>({0,3,9,12,14}), solver.FindPeaks());
+struct PictureTests : public testing::TestWithParam<TestData> {};
+
+TEST_P(PictureTests, test)
+{
+  auto [input, expected] = parse_test_data(GetParam());
+  EXPECT_EQ(expected, Solver(std::move(input)).FindPeaks());
 }
+
+INSTANTIATE_TEST_CASE_P(Mountains, PictureTests, testing::Values(
+  TestData{
+	  "   #           ",
+	  "   ##          ",
+	  "  ###~~~~#     ",
+	  "  ###~~#~#~~#  ",
+	  "#~###~####~##~#",
+	  "P  P   P P  P P"},
+  TestData{
+		"   #           ",
+		"   ##          ",
+		"  ###~~~~#     ",
+		"  ###~####~~#  ",
+		"#~###~####~##~#",
+		"P  P     P  P P"}
+));
 
 TEST(SolverTests, FindPeeksAfterMountain) {
 	Solver solver({1, 0, 3, 5, 4, 0, 3, 2, 2, 2, 0, 1, 2, 0, 1});
